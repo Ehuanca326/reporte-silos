@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Silos">
 <script>
-  // Cuando se abre desde el icono instalado, va directo al reporte.
+  // Al abrir desde el icono instalado, va directo al reporte.
   var REPORTE = 'https://claude.ai/artifact/Pg3VxoMhYUU8H6nA3eGDzm';
   var instalada = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true || /[?&]app=1/.test(location.search);
   if (instalada) location.replace(REPORTE);
@@ -24,54 +24,92 @@
   *{box-sizing:border-box}
   body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--ink);font:16px/1.5 "Segoe UI",Roboto,Arial,sans-serif;padding:24px 16px}
   main{width:min(440px,100%);background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px 24px;text-align:center}
-  img.logo{width:112px;height:112px;border-radius:26px}
-  h1{font-size:1.5rem;margin:14px 0 4px}
-  p{margin:0 0 18px;color:var(--muted)}
-  .btn{display:block;width:100%;border:0;border-radius:10px;padding:14px 16px;font:600 1.05rem/1.2 inherit;cursor:pointer;text-decoration:none;margin-top:10px}
+  img.logo{width:120px;height:120px;border-radius:28px;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+  h1{font-size:1.5rem;margin:14px 0 2px}
+  .sub{margin:0 0 20px;color:var(--muted)}
+  .btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;border:0;border-radius:12px;padding:15px 16px;font:600 1.08rem/1.2 inherit;cursor:pointer;text-decoration:none;margin-top:10px;min-height:52px}
+  .btn img{width:28px;height:28px;border-radius:7px}
   .main{background:var(--ink);color:var(--surface)}
   .alt{background:transparent;color:var(--ink);border:1px solid var(--line)}
-  .guia{text-align:left;background:var(--bg);border-radius:10px;padding:12px 14px;margin-top:14px;font-size:.95rem}
-  .guia ol{margin:6px 0 0;padding-left:20px}
-  .ok{color:var(--ink);font-weight:600;margin-top:12px}
+  .box{text-align:left;background:var(--bg);border-radius:12px;padding:14px 16px;margin-top:14px;font-size:.98rem}
+  .box ol{margin:6px 0 0;padding-left:22px}.box li{margin:6px 0}
+  .ok{color:var(--ink);font-weight:600}
+  .ico{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border:1px solid var(--line);border-radius:6px;vertical-align:middle;margin:0 2px;background:var(--surface)}
   [hidden]{display:none!important}
+  /* Flecha hacia la barra de Safari (iPhone abajo, iPad arriba) */
+  #flecha{position:fixed;left:50%;transform:translateX(-50%);bottom:8px;font-size:2.4rem;color:var(--grain);animation:bote 1s infinite}
+  @keyframes bote{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,8px)}}
 </style>
 </head>
 <body>
 <main>
-  <img class="logo" src="icon-512.png" alt="">
+  <img class="logo" src="icon-512.png" alt="Icono del silo">
   <h1>Reporte de silos</h1>
-  <p>Gravetal Bolivia · Reporte de almacenamiento</p>
+  <p class="sub">Gravetal Bolivia · Reporte de almacenamiento</p>
 
-  <button class="btn main" id="instalar" hidden>Instalar acceso directo</button>
-  <div id="hecho" class="ok" hidden>Listo. Ya tienes el icono del silo; ábrelo desde tu pantalla de inicio o escritorio.</div>
-
-  <div class="guia" id="guia-ios" hidden>
-    <b>En iPhone o iPad:</b>
-    <ol><li>Toca <b>Compartir</b> <span aria-hidden="true">(el cuadrado con la flecha ↑)</span>.</li><li>Elige <b>Agregar a inicio</b> → <b>Agregar</b>.</li></ol>
-  </div>
-  <div class="guia" id="guia-otro" hidden>
-    <b>Para crear el icono:</b>
-    <ol><li>Abre esta página en <b>Chrome</b> o <b>Edge</b>.</li><li>Menú <b>⋮</b> → <b>Instalar</b> o <b>Añadir a pantalla de inicio</b>.</li></ol>
-  </div>
-
-  <a class="btn alt" id="abrir" href="https://claude.ai/artifact/Pg3VxoMhYUU8H6nA3eGDzm">Abrir el reporte</a>
+  <button class="btn main" id="crear" type="button"><img src="icon-192.png" alt="">Crear acceso directo</button>
+  <div class="box" id="msg" hidden></div>
+  <a class="btn alt" href="https://claude.ai/artifact/Pg3VxoMhYUU8H6nA3eGDzm">Abrir el reporte</a>
 </main>
+<div id="flecha" hidden aria-hidden="true">⬇</div>
 <script>
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});
   var ua = navigator.userAgent || '';
   var esIOS = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
-  var dentroDeApp = /FBAN|FBAV|Instagram|Line\/|WhatsApp|; wv\)/.test(ua);
-  var aviso = null, btn = document.getElementById('instalar');
-  if (esIOS) document.getElementById('guia-ios').hidden = false;
-  window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); aviso = e; btn.hidden = false; document.getElementById('guia-otro').hidden = true; });
-  btn.addEventListener('click', function(){
-    if (!aviso) return;
-    aviso.prompt();
-    aviso.userChoice.then(function(r){ if (r.outcome === 'accepted'){ btn.hidden = true; document.getElementById('hecho').hidden = false; } aviso = null; });
+  var esAndroid = /Android/.test(ua);
+  var esWindows = /Windows/.test(ua);
+  var esMac = /Macintosh/.test(ua) && !esIOS;
+  var enApp = /FBAN|FBAV|Instagram|WhatsApp|Line\/|; wv\)|Claude/i.test(ua);   // navegador interno de otra app
+  var esSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
+  var aviso = null, msg = document.getElementById('msg');
+  function mostrar(html){ msg.innerHTML = html; msg.hidden = false; }
+  function listo(){ mostrar('<span class="ok">Listo. Ya tienes el icono del silo en tu pantalla de inicio o escritorio.</span>'); }
+
+  window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); aviso = e; });
+  window.addEventListener('appinstalled', listo);
+
+  document.getElementById('crear').addEventListener('click', function(){
+    // 1) El navegador permite instalar: un toque y queda el icono del silo.
+    if (aviso){
+      aviso.prompt();
+      aviso.userChoice.then(function(r){ if (r.outcome === 'accepted') listo(); });
+      aviso = null; return;
+    }
+    // 2) iPhone / iPad: Apple solo permite hacerlo desde Compartir.
+    if (esIOS){
+      if (!esSafari){
+        mostrar('Abre esta página en <b>Safari</b> para crear el icono: copia el enlace y pégalo en Safari.');
+        return;
+      }
+      mostrar('<b>Dos toques y listo:</b><ol><li>Toca <b>Compartir</b> <span class="ico">⬆︎</span> en la barra de Safari (la flecha te lo señala).</li><li>Elige <b>Agregar a inicio</b> → <b>Agregar</b>.</li></ol>Se crea el icono del silo con el nombre "Silos".');
+      document.getElementById('flecha').hidden = !/iPhone|iPod/.test(ua);
+      return;
+    }
+    // 3) Android dentro de WhatsApp u otra app: se abre en Chrome para poder instalar.
+    if (esAndroid && enApp){
+      location.href = 'intent://' + location.host + location.pathname + '#Intent;scheme=https;package=com.android.chrome;end';
+      return;
+    }
+    // 4) Android en Chrome: el menú siempre trae la opción (con el icono del silo).
+    if (esAndroid){
+      mostrar('Toca <b>⋮</b> (arriba a la derecha) → <b>Instalar app</b> o <b>Añadir a pantalla de inicio</b> → <b>Instalar</b>. Queda el icono del silo.');
+      return;
+    }
+    // 5) PC Windows: se descarga el archivo que crea el icono del silo en el escritorio.
+    if (esWindows){
+      var a = document.createElement('a');
+      a.href = 'crear-icono-reporte-silos.bat'; a.download = 'Crear icono Reporte de silos.bat';
+      document.body.appendChild(a); a.click(); a.remove();
+      mostrar('Se descargó <b>Crear icono Reporte de silos</b>. Ábrelo (doble clic) y aparecerá el icono del silo en tu escritorio.<br><br>Si Windows avisa "Windows protegió tu PC": <b>Más información</b> → <b>Ejecutar de todas formas</b>.');
+      return;
+    }
+    // 6) Mac
+    if (esMac){
+      mostrar('En <b>Safari</b>: menú <b>Archivo</b> → <b>Añadir al Dock</b>.<br>En <b>Chrome</b>: icono de instalar en la barra de direcciones, o menú ⋮ → <b>Transmitir, guardar y compartir</b> → <b>Instalar página como app</b>.');
+      return;
+    }
+    mostrar('Abre esta página en Chrome o Edge y usa el menú → <b>Instalar</b>.');
   });
-  window.addEventListener('appinstalled', function(){ btn.hidden = true; document.getElementById('hecho').hidden = false; });
-  // Si en 2 segundos el navegador no ofreció "Instalar" (p. ej. abierto desde WhatsApp), se muestran los pasos.
-  setTimeout(function(){ if (!aviso && !esIOS && document.getElementById('hecho').hidden) document.getElementById('guia-otro').hidden = false; }, 2000);
 </script>
 </body>
 </html>
